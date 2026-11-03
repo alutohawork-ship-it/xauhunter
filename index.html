@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Trading Agent - XAUUSD (Live)</title>
+    <style>
+        /* ... (style Anda tetap sama) ... */
+    </style>
+</head>
+<body>
+    <h1>🤖 AI Agent Trading XAUUSD (Live)</h1>
+
+    <div class="price-box">
+        <p>Harga XAUUSD Saat Ini (Live):</p>
+        <div class="price" id="live-price">Menghubungkan...</div>
+        <p style="font-size: 0.8rem; color: #666;" id="last-update"></p>
+    </div>
+
+    <button id="analyze-btn">Analisis dengan AI</button>
+    <div id="analysis-result">Hasil analisis akan muncul di sini.</div>
+
+    <script>
+        const priceEl = document.getElementById('live-price');
+        const updateEl = document.getElementById('last-update');
+        const btn = document.getElementById('analyze-btn');
+        const resultEl = document.getElementById('analysis-result');
+        const BACKEND_URL = 'http://localhost:3000';
+
+        // --- 1. Koneksi ke WebSocket MyFundedPerps untuk Harga Live ---
+        // Catatan: WebSocket ini publik dan TIDAK memerlukan API Key.
+        const socket = new WebSocket("wss://api-stream.myfundedperpetuals.com/v1/market-data");
+
+        socket.onopen = () => {
+            console.log("Terhubung ke stream MyFundedPerps.");
+            // Berlangganan (subscribe) ke tick harga untuk simbol XAU.
+            // Jika simbol "XAU" tidak berhasil, coba ganti dengan "XAUUSD".
+            const subscriptionMessage = {
+                op: "sub",
+                id: 1,
+                channel: "tick",
+                symbols: ["XAU"], // Ganti ke "XAUUSD" jika perlu
+                // providers: ["hyperliquid"] // Opsional: tentukan provider
+            };
+            socket.send(JSON.stringify(subscriptionMessage));
+        };
+
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                // Filter hanya untuk event 'tick' dengan simbol yang kita langganan
+                if (data.channel === "tick" && data.symbol === "XAU") {
+                    const price = parseFloat(data.price);
+                    priceEl.textContent = `$${price.toFixed(2)}`;
+                    updateEl.textContent = `Terakhir diperbarui: ${new Date().toLocaleTimeString()}`;
+                }
+            } catch (e) {
+                console.error("Gagal memproses pesan stream:", e);
+            }
+        };
+
+        socket.onerror = (err) => {
+            console.error("Error WebSocket:", err);
+            priceEl.textContent = "Gagal memuat harga live.";
+        };
+
+        socket.onclose = () => {
+            console.log("Koneksi WebSocket ditutup.");
+            // Di aplikasi produksi, Anda perlu menambahkan logika untuk menyambung ulang.
+        };
+
+        // --- 2. Kirim Permintaan Analisis ke Backend (Tidak Berubah) ---
+        btn.addEventListener('click', async () => {
+            // ... (kode event listener tombol analisis Anda tetap sama) ...
+        });
+    </script>
+</body>
+</html>
